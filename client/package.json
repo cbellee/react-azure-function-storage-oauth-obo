@@ -1,5 +1,5 @@
 {
-  "name": "react-router-sample",
+  "name": "react-azure-function-storage-oauth-obo",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -43,7 +43,5 @@
       "ie 11"
     ]
   },
-  "devDependencies": {
-    "jest": "^26.6.3"
-  }
+  "devDependencies": {}
 }

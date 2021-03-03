@@ -26,8 +26,6 @@ const DocumentContent = () => {
 		}
 	}, [inProgress]);
 
-	//console.log('docData: ', documentData);
-
 	return (
 		<Paper>
 			{ documentData ? <DocumentData documentData={documentData} /> : null}
