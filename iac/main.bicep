@@ -6,7 +6,7 @@ param tags object = {
 var suffix = uniqueString(concat(substring(resourceGroup().id, 0, 6), substring(subscription().id, 0, 6)))
 var storageAccountName = concat('stor', suffix)
 var appInsightsName = uniqueString(concat('insights-', suffix))
-var appName = uniqueString(concat('func-', suffix))
+var appName = concat('func-', suffix)
 var storageContainerName = '$web'
 
 resource storage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
@@ -97,4 +97,4 @@ resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
 }
 
 output storageAccountName string = storageAccountName
-output functionUrl string = functionApp.properties.hostNames[0]
+output functionName string = functionApp.name

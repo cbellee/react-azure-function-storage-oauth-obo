@@ -17,7 +17,7 @@
     "suffix": "[uniqueString(concat(substring(resourceGroup().id, 0, 6), substring(subscription().id, 0, 6)))]",
     "storageAccountName": "[concat('stor', variables('suffix'))]",
     "appInsightsName": "[uniqueString(concat('insights-', variables('suffix')))]",
-    "appName": "[uniqueString(concat('func-', variables('suffix')))]",
+    "appName": "[concat('func-', variables('suffix'))]",
     "storageContainerName": "$web"
   },
   "resources": [
@@ -118,16 +118,16 @@
       "type": "string",
       "value": "[variables('storageAccountName')]"
     },
-    "functionUrl": {
+    "functionName": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.Web/sites', variables('appName'))).hostNames[0]]"
+      "value": "[variables('appName')]"
     }
   },
   "metadata": {
     "_generator": {
       "name": "bicep",
       "version": "0.3.1.62928",
-      "templateHash": "13236063545206523024"
+      "templateHash": "9669640328014208097"
     }
   }
 }
