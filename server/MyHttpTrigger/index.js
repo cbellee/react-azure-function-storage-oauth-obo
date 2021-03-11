@@ -2,8 +2,10 @@ const express = require('express');
 const passport = require('passport');
 const fetch = require('node-fetch');
 const auth = require('../auth.json');
+const db = require('../db.json');
 const http = require('http');
 const https = require('https');
+const { Connection, Request } = require("tedious");
 
 const DOMParser = require('xmldom').DOMParser;
 
@@ -40,7 +42,7 @@ app.use((req, res, next) => {
 });
 
 // get blob from storage container
-app.get('/api/download', passport.authenticate('oauth-bearer', { session: false }),
+app.get('/api/blob', passport.authenticate('oauth-bearer', { session: false }),
 	async (req, res) => {
 		const { container, blob } = req.query;
 		console.log('container: ', container, 'blob: ', blob);
@@ -50,7 +52,7 @@ app.get('/api/download', passport.authenticate('oauth-bearer', { session: false 
 		const userToken = req.get('authorization');
 
 		// request a new token and use it to call resource API on user's behalf
-		let tokenObj = await getAccessToken(userToken);
+		let tokenObj = await getAccessToken(userToken, auth.azureStorageResourceScope);
 		let accessToken = tokenObj['access_token'];
 
 		let options = {
@@ -93,7 +95,7 @@ app.get('/api/download', passport.authenticate('oauth-bearer', { session: false 
 	});
 
 // list blobs in storage account container
-app.get('/api/list', passport.authenticate('oauth-bearer', { session: false }),
+app.get('/api/blob/list', passport.authenticate('oauth-bearer', { session: false }),
 	async (req, res) => {
 		// access http query string parameters
 		const { container } = req.query;
@@ -101,7 +103,7 @@ app.get('/api/list', passport.authenticate('oauth-bearer', { session: false }),
 		const userToken = req.get('authorization');
 
 		// get access token on behalf of the calling user
-		let tokenObj = await getAccessToken(userToken);
+		let tokenObj = await getAccessToken(userToken, auth.azureStorageResourceScope);
 
 		// get list of blobs in container
 		await listBlobs(tokenObj['access_token'], auth.storageAccountName, container)
@@ -127,7 +129,7 @@ app.get('/api/list', passport.authenticate('oauth-bearer', { session: false }),
 )
 
 // post blob to storage account container
-app.post('/api/upload', passport.authenticate('oauth-bearer', { session: false }),
+app.post('/api/blob', passport.authenticate('oauth-bearer', { session: false }),
 	async (req, res) => {
 		const { container, blob } = req.query;
 		console.log('container: ', container, 'blob: ', blob);
@@ -137,13 +139,200 @@ app.post('/api/upload', passport.authenticate('oauth-bearer', { session: false }
 		const userToken = req.get('authorization');
 
 		// request new token and use it to call resource API on user's behalf
-		let tokenObj = await getAccessToken(userToken);
+		let tokenObj = await getAccessToken(userToken, auth.azureStorageResourceScope);
 
 		await createBlob(tokenObj['access_token'], auth.storageAccountName, container, blob)
 			.then(data => { data.pipe(writableStream) })
 			.then(res.status(200));
 	}
 );
+
+// read db data
+app.get('/api/db', passport.authenticate('oauth-bearer', { session: false }),
+	async (req, res) => {
+		const userToken = req.get('authorization');
+		let tokenObj = await getAccessToken(userToken, auth.azureSqlDbResourceScope);
+		console.log('access_token', tokenObj["access_token"]);
+
+		// create database configuration object
+		const config = {
+			server: db.serverName,
+			authentication: {
+				type: "azure-active-directory-access-token",
+				options: {
+					token: tokenObj["access_token"]
+				},
+			},
+			options: {
+				database: db.dbName,
+				encrypt: true,
+			}
+		};
+
+		const connection = new Connection(config);
+
+		connection.on('connect', (err) => {
+			if (err) {
+				console.log('Connection Failed');
+				throw err;
+			}
+
+			query = 'SELECT * FROM Students FOR JSON PATH';
+
+			executeQuery(query, connection, function (err, rows) {
+				if (err) {
+					// Handle the error
+					throw (err);
+				} else if (rows) {
+					// return database query result as a single array
+					console.log('rows: ', rows[0]);
+					res.end(rows[0]);
+				} else {
+					// return empty array
+					res.end([]);
+				}
+			});
+		});
+
+		connection.connect();
+	});
+
+// create student
+app.post('/api/db', passport.authenticate('oauth-bearer', { session: false }),
+	async (req, res) => {
+		const userToken = req.get('authorization');
+		let tokenObj = await getAccessToken(userToken, auth.azureSqlDbResourceScope);
+		console.log('access_token', tokenObj["access_token"]);
+
+		// create database configuration object
+		const config = {
+			server: db.serverName,
+			authentication: {
+				type: "azure-active-directory-access-token",
+				options: {
+					token: tokenObj["access_token"]
+				},
+			},
+			options: {
+				database: db.dbName,
+				encrypt: true,
+			}
+		};
+
+		const connection = new Connection(config);
+
+		connection.on('connect', (err) => {
+			if (err) {
+				console.log('Connection Failed');
+				throw err;
+			}
+
+			query = 'INSERT INTO Students (id, firstName, middleName, lastName, email, phoneNumber, dateOfBirth, className, teacherName) VALUES (NULL, @firstName, @middleName. @lastName, @email, @phoneNumber, @dateOfBirth, @className, @teacherName)';
+
+			executeInsert(inputData, query, connection, function (err, rows) {
+				if (err) {
+					// Handle the error
+					throw (err);
+				} else if (rows) {
+					// return database query result as a single array
+					console.log('rows: ', rows[0]);
+					//res.end(rows[0]);
+				} else {
+					// return empty array
+					res.end([]);
+				}
+			});
+		});
+
+		connection.connect();
+	}
+)
+
+// modify student
+app.patch('/api/db', passport.authenticate('oauth-bearer', { session: false }),
+	async (req, res) => {
+
+	}
+)
+
+// delete student
+app.delete('/api/db', passport.authenticate('oauth-bearer', { session: false }),
+	async (req, res) => {
+
+	}
+)
+
+// execute SQL query statement
+function executeQuery(query, connection, callback) {
+
+	var results = [];
+	const request = new Request(query, (err, rowCount) => {
+		if (err) {
+			throw err;
+		}
+
+		console.log('DONE!');
+		callback(null, results);
+		connection.close();
+	});
+
+	// Emits a 'DoneInProc' event when completed.
+	request.on('row', (columns) => {
+		columns.forEach((column) => {
+			if (column.value === null) {
+				console.log('NULL');
+			} else {
+				console.log(column.value);
+				results.push(JSON.parse(column.value));
+			}
+		});
+	});
+
+	request.on('done', (rowCount) => {
+		console.log('Done was called!');
+	});
+
+	request.on('doneInProc', (rowCount, more) => {
+		console.log(rowCount + ' rows returned');
+	});
+
+	connection.execSql(request);
+}
+
+// execute SQL insert statement
+function executeInsert(inputData, query, connection, callback) {
+
+	if (inputData !== null) {
+		var results = [];
+		const request = new Request(query, (err, rowCount) => {
+			if (err) {
+				throw err;
+			}
+
+			console.log('DONE!');
+			//callback(null, results);
+			connection.close();
+		});
+
+		request.addParameter('firstName', TYPES.NVarChar, inputData.firstName);
+		request.addParameter('middleName', TYPES.NVarChar, inputData.middleName);
+		request.addParameter('lastName', TYPES.NVarChar, inputData.lastName);
+		request.addParameter('email', TYPES.NVarChar, inputData.email);
+		request.addParameter('phoneNumber', TYPES.NVarChar, inputData.phoneNumber);
+		request.addParameter('dateOfBirth', TYPES.DateTime, inputData.dateOfBirth);
+		request.addParameter('className', TYPES.NVarChar, inputData.className);
+		request.addParameter('teacherName', TYPES.NVarChar, inputData.teacherName);
+
+		request.on('doneInProc', (rowCount, more) => {
+			console.log(rowCount + ' rows inserted');
+		});
+
+		connection.execSql(request);
+	} else {
+		console.log("inputData is NULL...");
+		callback(null, null);
+	}
+}
 
 // get blob from storage account container
 async function getBlob(accessToken, storageAccountName, containerName, blobName) {
@@ -199,8 +388,39 @@ async function createBlob(accessToken, storageAccountName, containerName, blobNa
 	return json;
 }
 
+// query Azure SQL database
+function queryDatabase(connection) {
+	console.log("Reading rows from the Table...");
+	let results = [];
+
+	// Read all rows from table
+	const request = new Request(
+		`SELECT * FROM Students FOR JSON PATH`,
+		(err, rowCount) => {
+			if (err) {
+				console.error(err.message);
+			} else {
+				console.log(`${rowCount} row(s) returned`);
+			}
+		}
+	);
+
+	function handleRow(columns) {
+		columns.forEach(function (column) {
+			results.push(column.value);
+		})
+	}
+
+	function handleResult() {
+
+	}
+
+	request.on("row", handleRow);
+	connection.execSql(request);
+}
+
 // get azure storage access token on behalf of user
-async function getAccessToken(userToken) {
+async function getAccessToken(userToken, scope) {
 
 	const [bearer, tokenValue] = userToken.split(' ');
 	const tokenEndpoint = `https://${auth.authority}/${auth.tenantName}/oauth2/${auth.version}/token`;
@@ -213,7 +433,7 @@ async function getAccessToken(userToken) {
 	urlencoded.append('client_id', auth.clientID);
 	urlencoded.append('client_secret', auth.clientSecret);
 	urlencoded.append('assertion', tokenValue);
-	urlencoded.append('scope', ...auth.resourceScope);
+	urlencoded.append('scope', ...scope);
 	urlencoded.append('requested_token_use', 'on_behalf_of');
 
 	let options = {

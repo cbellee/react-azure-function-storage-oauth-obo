@@ -8,9 +8,6 @@ export function Home() {
   return (
       <>
           <AuthenticatedTemplate>
-            <ButtonGroup orientation="vertical">
-			<Button component={RouterLink} to="/document" variant="contained" color="primary">Request Document Information</Button>
-            </ButtonGroup>
           </AuthenticatedTemplate>
 
           <UnauthenticatedTemplate>

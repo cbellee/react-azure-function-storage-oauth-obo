@@ -3,37 +3,37 @@ import { useEffect, useState } from "react";
 // Msal imports
 import { MsalAuthenticationTemplate, useMsal } from "@azure/msal-react";
 import { InteractionStatus, InteractionType } from "@azure/msal-browser";
-import { apiConfig, loginRequest } from "../authConfig";
+import { loginRequest } from "../authConfig";
+import { apiConfig } from "../apiConfig";
 
 // App imports
-import { Loading } from "../ui-components/Loading";
-import { ErrorComponent } from "../ui-components/ErrorComponent";
-import { DocumentData } from "../ui-components/DocumentData";
+import { Loading } from "./Loading";
+import { ErrorComponent } from "./ErrorComponent";
+import { StudentData } from "./StudentsDataGrid";
 
 // Material-ui imports
 import Paper from "@material-ui/core/Paper";
-import { callListBlobApi } from "../utils/AzureStorageApiCall";
+import { callQueryAzureDbApi } from "../utils/AzureApiCall";
 
-const DocumentContent = () => {
+const EditStudentContent = () => {
 	const { inProgress } = useMsal();
-	const [documentData, setDocumentData] = useState(null);
-	const endpoint = `${apiConfig.listEndpoint}`;
+	const [dbData, setDbData] = useState(null);
 
 	useEffect(() => {
 		if (inProgress === InteractionStatus.None) {
-			callListBlobApi(apiConfig.listEndpoint)
-				.then(response => setDocumentData(response));
+			callQueryAzureDbApi(`${apiConfig.endpoint}/db`)
+				.then(response => setDbData(response));
 		}
 	}, [inProgress]);
 
 	return (
 		<Paper>
-			{ documentData ? <DocumentData documentData={documentData} /> : null}
+			{ dbData ? <StudentData dbData={dbData} /> : null}
 		</Paper>
 	);
 };
 
-export function Document() {
+export function EditStudentData() {
 	const authRequest = {
 		...loginRequest
 	};
@@ -45,7 +45,7 @@ export function Document() {
 			errorComponent={ErrorComponent}
 			loadingComponent={Loading}
 		>
-			<DocumentContent />
+			<EditStudentContent />
 		</MsalAuthenticationTemplate>
 	)
 };

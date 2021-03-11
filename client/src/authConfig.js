@@ -51,10 +51,5 @@ export const msalConfig = {
 
 // Add here scopes for id token to be used at MS Identity Platform endpoints.
 export const loginRequest = {
-	scopes: ["api://038554c4-271d-4c8f-ae72-56d3d23db9fc/storage.blob.read"]
+	scopes: ["api://038554c4-271d-4c8f-ae72-56d3d23db9fc/storage.blob.read", "api://038554c4-271d-4c8f-ae72-56d3d23db9fc/sql.db.readwrite"]
 };
-
-export const apiConfig = {
-	listEndpoint: "http://localhost:7071/api/list?container=test-container",
-	getEndpoint: "http://localhost:7071/api"
-}
