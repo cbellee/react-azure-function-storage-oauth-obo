@@ -34,5 +34,5 @@ az storage blob upload-batch --account-name $STORAGE_ACCOUNT_NAME --source ../cl
 # deploy azure function using git
 az webapp deployment user set --user-name $GIT_DEPLOY_USER --password $GIT_DEPLOY_PASSWORD
 az webapp deployment source config-local-git --resource-group $RG_NAME --name $FUNCTION_NAME
-git remote add azure "https://${FUNCTION_NAME}.scm.azurewebsites.net/${FUNCTION_NAME}.git"
+git remote add azure "https://$FUNCTION_NAME.scm.azurewebsites.net/$FUNCTION_NAME.git"
 git push azure main
