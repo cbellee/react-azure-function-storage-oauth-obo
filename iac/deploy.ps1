@@ -4,11 +4,11 @@ $DEPLOY_NAME='react-func-app-deployment'
 $GIT_DEPLOY_PASSWORD='M1cr0s@ft'
 $GIT_DEPLOY_USER='cbellee-git-deploy'
 
-bicep build ./main.bicep
+bicep build ./main.bicep --outfile ./main.json
 
 az group create --location $LOCATION --resource-group $RG_NAME
 
-$OUTPUT= az deployment group create `
+$OUTPUT = az deployment group create `
 	--resource-group $RG_NAME `
 	--name $DEPLOY_NAME `
 	--template-file main.json `
