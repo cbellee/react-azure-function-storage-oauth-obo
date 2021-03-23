@@ -35,10 +35,8 @@ $storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroupName -Ac
 $ctx = $storageAccount.Context
 Enable-AzStorageStaticWebsite -Context $ctx -IndexDocument index.html 
 $storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroupName -AccountName $deployment.Outputs.webStorageAccountName.value
-$storageAccount.PrimaryEnpoints.Web
 
-#az storage blob service-properties update --account-name $deployment.Outputs.webStorageAccountName.value --static-website --index-document index.html --auth-mode login
-#az storage blob service-properties show --account-name $deployment.Outputs.webStorageAccountName.value  --auth-mode login 
+$functionName = $deployment.Outputs.functionName.value
 
 # patch react .env file at root of ./client directory
 $configMap = @{}
@@ -48,7 +46,7 @@ $configMap['REACT_APP_CLIENT_ID'] = $clientId
 $configMap['REACT_APP_AUTHORITY'] = $authority
 $configMap['REACT_APP_REDIRECT_URI'] = $storageAccount.PrimaryEnpoints.web
 $configMap['REACT_APP_POST_LOGOUT_REDIRECT_URI'] = $storageAccount.PrimaryEnpoints.web
-$configMap['REACT_APP_API_ENDPOINT'] = "https://$($deployment.Outputs.functionName.value).azurewebsites.net/api"
+$configMap['REACT_APP_API_ENDPOINT'] = "https://$($functionName).azurewebsites.net/api"
 
 # clear .env file
 Set-Content -Path ../client/.env -Value '' -NoNewline
@@ -67,6 +65,7 @@ Get-ChildItem -Path ../client/build -Recurse |
 
 # deploy azure function using git
 az webapp deployment user set --user-name $gitDeployUser --password $gitDeployPassword
-az webapp deployment source config-local-git --resource-group $resourceGroupName --name $deployment.Outputs.functionName.value
-git remote add azure "https://$($deployment.Outputs.functionName.vaule).scm.azurewebsites.net/$($deployment.Outputs.functionName.value).git"
+az webapp deployment source config-local-git --resource-group $resourceGroupName --name $functionName
+git remote add azure "https://$($functionName).scm.azurewebsites.net/$($functionName).git"
 git push azure main
+
