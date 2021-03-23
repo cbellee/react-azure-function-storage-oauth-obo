@@ -3,15 +3,11 @@ const passport = require('passport');
 const fetch = require('node-fetch');
 const auth = require('../auth.json');
 const db = require('../db.json');
-const http = require('http');
 const https = require('https');
 const { Connection, Request } = require("tedious");
-
 const DOMParser = require('xmldom').DOMParser;
-
 const createHandler = require('azure-function-express').createHandler;
 const BearerStrategy = require('passport-azure-ad').BearerStrategy;
-const { response } = require('express');
 
 const options = {
 	identityMetadata: `https://${auth.authority}/${auth.tenantID}/${auth.version}/${auth.discovery}`,
@@ -99,7 +95,7 @@ app.get('/api/blob/list', passport.authenticate('oauth-bearer', { session: false
 	async (req, res) => {
 		// access http query string parameters
 		const { container } = req.query;
-		console.log('container: ', container);
+		console.log('storage account: ', auth.storageAccountName, 'container: ', container);
 		const userToken = req.get('authorization');
 
 		// get access token on behalf of the calling user
@@ -335,7 +331,7 @@ function executeInsert(inputData, query, connection, callback) {
 }
 
 // get blob from storage account container
-async function getBlob(accessToken, storageAccountName, containerName, blobName) {
+/* async function getBlob(accessToken, storageAccountName, containerName, blobName) {
 	let myHeaders = new fetch.Headers();
 	myHeaders.append('Authorization', 'Bearer ' + accessToken);
 	myHeaders.append('x-ms-version', '2017-11-09');
@@ -346,7 +342,7 @@ async function getBlob(accessToken, storageAccountName, containerName, blobName)
 		method: 'GET',
 		headers: myHeaders
 	};
-}
+} */
 
 // list blobs in storage account container
 async function listBlobs(accessToken, storageAccountName, containerName) {
@@ -389,7 +385,7 @@ async function createBlob(accessToken, storageAccountName, containerName, blobNa
 }
 
 // query Azure SQL database
-function queryDatabase(connection) {
+/* function queryDatabase(connection) {
 	console.log("Reading rows from the Table...");
 	let results = [];
 
@@ -417,7 +413,7 @@ function queryDatabase(connection) {
 
 	request.on("row", handleRow);
 	connection.execSql(request);
-}
+} */
 
 // get azure storage access token on behalf of user
 async function getAccessToken(userToken, scope) {

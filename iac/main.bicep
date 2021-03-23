@@ -1,18 +1,47 @@
-param location string
+param sqlAdminUserName string
+param sqlAdminPassword string
+param dbName string = 'studentdb'
 param tags object = {
   costcenter: 1234567890
 }
 
-var suffix = uniqueString(concat(substring(resourceGroup().id, 0, 6), substring(subscription().id, 0, 6)))
-var storageAccountName = concat('stor', suffix)
-var appInsightsName = uniqueString(concat('insights-', suffix))
-var appName = concat('func-', suffix)
-var storageContainerName = '$web'
+var prefix = uniqueString(resourceGroup().id)
+var serverName = concat(prefix, '-sqlserver')
+var webStorageAccountName = concat('webstor', prefix)
+var docsStorageAccountName = concat('docstor', prefix)
+var appInsightsName = uniqueString(concat(prefix, '-insights'))
+var appName = concat(prefix, '-func')
+var webStorageContainerName = '$web'
 
-resource storage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
-  location: location
+resource sqlServer 'Microsoft.Sql/servers@2020-08-01-preview' = {
+  name: serverName
+  tags: tags
+  location: resourceGroup().location
+  properties: {
+    administratorLogin: sqlAdminUserName
+    administratorLoginPassword: sqlAdminPassword
+    version: '12.0'
+  }
+}
+
+resource sqlDb 'Microsoft.Sql/servers/databases@2020-08-01-preview' = {
+  name: '${sqlServer.name}/${dbName}'
+  location: resourceGroup().location
+  tags: tags
+  sku: {
+    capacity: 5
+    name: 'Basic'
+    tier: 'Basic'
+  }
+  properties: {
+    createMode: 'Default'
+  }
+}
+
+resource webStorage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
+  location: resourceGroup().location
   kind: 'StorageV2'
-  name: storageAccountName
+  name: webStorageAccountName
   sku: {
     name: 'Standard_LRS'
     tier: 'Standard'
@@ -26,7 +55,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
     }
     accessTier: 'Hot'
     allowBlobPublicAccess: false
-    allowSharedKeyAccess: false
+    allowSharedKeyAccess: true
     supportsHttpsTrafficOnly: true
     encryption: {
       services: {
@@ -39,19 +68,49 @@ resource storage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
   }
 }
 
-resource storageContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2020-08-01-preview' = {
-  name: concat(storageAccountName, '/default/', storageContainerName)
+resource docsStorage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
+  location: resourceGroup().location
+  kind: 'StorageV2'
+  name: docsStorageAccountName
+  sku: {
+    name: 'Standard_LRS'
+    tier: 'Standard'
+  }
+  properties: {
+    networkAcls: {
+      bypass: 'AzureServices'
+      virtualNetworkRules: []
+      ipRules: []
+      defaultAction: 'Allow'
+    }
+    accessTier: 'Hot'
+    allowBlobPublicAccess: false
+    allowSharedKeyAccess: true
+    supportsHttpsTrafficOnly: true
+    encryption: {
+      services: {
+        blob: {
+          enabled: true
+        }
+      }
+      keySource: 'Microsoft.Storage'
+    }
+  }
+}
+
+resource webStorageContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2020-08-01-preview' = {
+  name: concat(webStorageAccountName, '/default/', webStorageContainerName)
   properties: {
     publicAccess: 'None'
   }
   dependsOn: [
-    storage
+    webStorage
   ]
 }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: appInsightsName
-  location: location
+  location: resourceGroup().location
   kind: 'web'
   tags: tags
   properties: {
@@ -60,7 +119,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02-preview' = {
 }
 
 resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
-  location: location
+  location: resourceGroup().location
   name: appName
   kind: 'functionapp,linux'
   properties: {
@@ -69,7 +128,7 @@ resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
-          value: concat('DefaultEndpointsProtocol=https;AccountName=', storageAccountName, ';AccountKey=', listKeys(storageAccountName, '2019-06-01').keys[0].value)
+          value: concat('DefaultEndpointsProtocol=https;AccountName=', webStorageAccountName, ';AccountKey=', listKeys(webStorageAccountName, '2019-06-01').keys[0].value)
         }
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
@@ -77,7 +136,7 @@ resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
-          value: '10.19.0'
+          value: '10.14'
         }
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
@@ -91,10 +150,13 @@ resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
     }
   }
   dependsOn: [
-    storage
+    webStorage
     appInsights
   ]
 }
 
-output storageAccountName string = storageAccountName
+output webStorageAccountName string = webStorageAccountName
+output docsStorageAccountName string = docsStorageAccountName
 output functionName string = functionApp.name
+output sqlDatabaseName string = sqlDb.properties.databaseId
+output sqlServerName string = sqlServer.name

@@ -1,38 +1,72 @@
-$LOCATION=australiaeast
-$RG_NAME='react-func-app-rg'
-$DEPLOY_NAME='react-func-app-deployment'
-$GIT_DEPLOY_PASSWORD='M1cr0s@ft'
-$GIT_DEPLOY_USER='cbellee-git-deploy'
+$ErrorActionPreference = 'Continue'
 
+$location = 'australiaeast'
+$resourceGroupName = 'student-app-rg'
+$deploymentName = 'student-app--deployment'
+$gitDeployPassword = 'M1cr0s@ft'
+$gitDeployUser = 'cbellee-git-deploy'
+
+$clientId = '1c0ddb7a-f862-455d-9e4f-8c64fc4cd489'
+$authority = "https://login.microsoftonline.com/3d49be6f-6e38-404b-bbd4-f61c1a2d25bf"
+
+# transpile bicep DSL to JSON arm template
 bicep build ./main.bicep --outfile ./main.json
 
-az group create --location $LOCATION --resource-group $RG_NAME
+# create resource group
+New-AzResourceGroup -Name $resourceGroupName -Location $location -Force
 
-$OUTPUT = az deployment group create `
-	--resource-group $RG_NAME `
-	--name $DEPLOY_NAME `
-	--template-file main.json `
-	--parameters location=$LOCATION `
-	--query 'properties.outputs' `
-	-o json
+# deploy azure infrastruture
+$deployment = New-AzResourceGroupDeployment `
+	-ResourceGroupName $resourceGroupName `
+	-Name $deploymentName `
+	-TemplateFile ./main.json `
+	-sqlAdminUserName 'dbadmin' `
+	-sqlAdminPassword 'M1cr0soft'
 
-$STORAGE_ACCOUNT_NAME=$OUTPUT.storageAccountName.value
-$FUNCTION_NAME=$OUTPUT.functionName.value
-
-"storageAccountName: $STORAGE_ACCOUNT_NAME"
-"functionName: $FUNCTION_NAME"
+# enable sql AAD RBAC
+Set-AzSqlServerActiveDirectoryAdministrator `
+	-ResourceGroupName $resourceGroupName `
+	-ServerName $deployment.Outputs.sqlServerName.value `
+	-DisplayName "DBAdmin_Account" `
+	-ObjectId '57963f10-818b-406d-a2f6-6e758d86e259'
 
 # enable static web hosting on storage account
-az storage blob service-properties update --account-name $STORAGE_ACCOUNT_NAME --static-website --index-document index.html --auth-mode login
+$storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroupName -AccountName $deployment.Outputs.webStorageAccountName.value
+$ctx = $storageAccount.Context
+Enable-AzStorageStaticWebsite -Context $ctx -IndexDocument index.html 
+$storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroupName -AccountName $deployment.Outputs.webStorageAccountName.value
+$storageAccount.PrimaryEnpoints.Web
 
-# build react site
+#az storage blob service-properties update --account-name $deployment.Outputs.webStorageAccountName.value --static-website --index-document index.html --auth-mode login
+#az storage blob service-properties show --account-name $deployment.Outputs.webStorageAccountName.value  --auth-mode login 
+
+# patch react .env file at root of ./client directory
+$configMap = @{}
+Get-Content -Path ../client/.env | Foreach-Object { $temp = $_ -split '='; $configMap[$temp[0]] = $temp[1] }
+
+$configMap['REACT_APP_CLIENT_ID'] = $clientId
+$configMap['REACT_APP_AUTHORITY'] = $authority
+$configMap['REACT_APP_REDIRECT_URI'] = $storageAccount.PrimaryEnpoints.web
+$configMap['REACT_APP_POST_LOGOUT_REDIRECT_URI'] = $storageAccount.PrimaryEnpoints.web
+$configMap['REACT_APP_API_ENDPOINT'] = "https://$($deployment.Outputs.functionName.value).azurewebsites.net/api"
+
+# clear .env file
+Set-Content -Path ../client/.env -Value '' -NoNewline
+
+# write each hashtable key/value pair as a new line 
+foreach ($item in $configMap.GetEnumerator()) {
+	Add-Content -Path ../client/.env -Value "$($item.Key)=$($item.Value)"
+}
+
+# build react app
 npm --prefix ../client run build
 
-# upload react web site to static storage
-az storage blob upload-batch --account-name $STORAGE_ACCOUNT_NAME --source ../client/build/ --destination '$web' --auth-mode login
+# upload react web site to static 
+Get-ChildItem -Path ../client/build -Recurse | 
+	Set-AzStorageBlobContent -Container '$web' -Context $ctx -Properties @{"ContentType" = "text/html"} -Force
 
 # deploy azure function using git
-az webapp deployment user set --user-name $GIT_DEPLOY_USER --password $GIT_DEPLOY_PASSWORD
-az webapp deployment source config-local-git --resource-group $RG_NAME --name $FUNCTION_NAME
-git remote add azure "https://$FUNCTION_NAME.scm.azurewebsites.net/$FUNCTION_NAME.git"
+az webapp deployment user set --user-name $gitDeployUser --password $gitDeployPassword
+az webapp deployment source config-local-git --resource-group $resourceGroupName --name $deployment.Outputs.functionName.value
+git remote add azure "https://$($deployment.Outputs.functionName.vaule).scm.azurewebsites.net/$($deployment.Outputs.functionName.value).git"
 git push azure main

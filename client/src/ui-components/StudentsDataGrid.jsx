@@ -1,10 +1,6 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 import { useHistory } from "react-router-dom";
-import { Redirect } from 'react-router-dom';
 import { DataGrid } from '@material-ui/data-grid';
-import Link from '@material-ui/core/Link';
-import StudentForm from './StudentForm'
-import Typography from "@material-ui/core/Typography";
 
 export const StudentsDataGrid = ({ dbData }) => {
 	const [selection, setSelection] = React.useState([]);
@@ -29,9 +25,9 @@ export const StudentsDataGrid = ({ dbData }) => {
 	const columns = [
 		{
 			field: 'id', headerName: 'ID', hide: true
-/* 			renderCell: (params) => (
-				<Link href={`editstudent?id=${params.value}`} to={{ pathname: 'editstudent/', query: { id: params.value } }}>edit</Link>
-			), */
+			/* 			renderCell: (params) => (
+							<Link href={`editstudent?id=${params.value}`} to={{ pathname: 'editstudent/', query: { id: params.value } }}>edit</Link>
+						), */
 		},
 		{ field: 'firstName', headerName: 'Name', width: 120 },
 		{ field: 'lastName', headerName: 'Surname', width: 150 },

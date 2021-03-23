@@ -24,7 +24,6 @@ const NavBar = () => {
 				</Toolbar>
 				<Tabs>
 					<Tab label="Students" component={RouterLink} to="/liststudents"/>
-					<Tab label="Documents" component={RouterLink} to="/listdocuments"/>
 				</Tabs>
 			</AppBar>
 		</div>

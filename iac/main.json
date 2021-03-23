@@ -2,8 +2,15 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "location": {
+    "sqlAdminUserName": {
       "type": "string"
+    },
+    "sqlAdminPassword": {
+      "type": "string"
+    },
+    "dbName": {
+      "type": "string",
+      "defaultValue": "studentdb"
     },
     "tags": {
       "type": "object",
@@ -14,19 +21,51 @@
   },
   "functions": [],
   "variables": {
-    "suffix": "[uniqueString(concat(substring(resourceGroup().id, 0, 6), substring(subscription().id, 0, 6)))]",
-    "storageAccountName": "[concat('stor', variables('suffix'))]",
-    "appInsightsName": "[uniqueString(concat('insights-', variables('suffix')))]",
-    "appName": "[concat('func-', variables('suffix'))]",
-    "storageContainerName": "$web"
+    "prefix": "[uniqueString(resourceGroup().id)]",
+    "serverName": "[concat(variables('prefix'), '-sqlserver')]",
+    "webStorageAccountName": "[concat('webstor', variables('prefix'))]",
+    "docsStorageAccountName": "[concat('docstor', variables('prefix'))]",
+    "appInsightsName": "[uniqueString(concat(variables('prefix'), '-insights'))]",
+    "appName": "[concat(variables('prefix'), '-func')]",
+    "webStorageContainerName": "$web"
   },
   "resources": [
     {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2020-08-01-preview",
+      "name": "[variables('serverName')]",
+      "tags": "[parameters('tags')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "administratorLogin": "[parameters('sqlAdminUserName')]",
+        "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
+        "version": "12.0"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2020-08-01-preview",
+      "name": "[format('{0}/{1}', variables('serverName'), parameters('dbName'))]",
+      "location": "[resourceGroup().location]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "capacity": 5,
+        "name": "Basic",
+        "tier": "Basic"
+      },
+      "properties": {
+        "createMode": "Default"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('serverName'))]"
+      ]
+    },
+    {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2020-08-01-preview",
-      "location": "[parameters('location')]",
+      "location": "[resourceGroup().location]",
       "kind": "StorageV2",
-      "name": "[variables('storageAccountName')]",
+      "name": "[variables('webStorageAccountName')]",
       "sku": {
         "name": "Standard_LRS",
         "tier": "Standard"
@@ -40,7 +79,38 @@
         },
         "accessTier": "Hot",
         "allowBlobPublicAccess": false,
-        "allowSharedKeyAccess": false,
+        "allowSharedKeyAccess": true,
+        "supportsHttpsTrafficOnly": true,
+        "encryption": {
+          "services": {
+            "blob": {
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2020-08-01-preview",
+      "location": "[resourceGroup().location]",
+      "kind": "StorageV2",
+      "name": "[variables('docsStorageAccountName')]",
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "properties": {
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [],
+          "ipRules": [],
+          "defaultAction": "Allow"
+        },
+        "accessTier": "Hot",
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": true,
         "supportsHttpsTrafficOnly": true,
         "encryption": {
           "services": {
@@ -55,19 +125,19 @@
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
       "apiVersion": "2020-08-01-preview",
-      "name": "[concat(variables('storageAccountName'), '/default/', variables('storageContainerName'))]",
+      "name": "[concat(variables('webStorageAccountName'), '/default/', variables('webStorageContainerName'))]",
       "properties": {
         "publicAccess": "None"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('webStorageAccountName'))]"
       ]
     },
     {
       "type": "Microsoft.Insights/components",
       "apiVersion": "2020-02-02-preview",
       "name": "[variables('appInsightsName')]",
-      "location": "[parameters('location')]",
+      "location": "[resourceGroup().location]",
       "kind": "web",
       "tags": "[parameters('tags')]",
       "properties": {
@@ -77,7 +147,7 @@
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2020-06-01",
-      "location": "[parameters('location')]",
+      "location": "[resourceGroup().location]",
       "name": "[variables('appName')]",
       "kind": "functionapp,linux",
       "properties": {
@@ -86,7 +156,7 @@
           "appSettings": [
             {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountName'), '2019-06-01').keys[0].value)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('webStorageAccountName'), ';AccountKey=', listKeys(variables('webStorageAccountName'), '2019-06-01').keys[0].value)]"
             },
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
@@ -94,7 +164,7 @@
             },
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
-              "value": "10.19.0"
+              "value": "10.14"
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -109,25 +179,37 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('webStorageAccountName'))]"
       ]
     }
   ],
   "outputs": {
-    "storageAccountName": {
+    "webStorageAccountName": {
       "type": "string",
-      "value": "[variables('storageAccountName')]"
+      "value": "[variables('webStorageAccountName')]"
+    },
+    "docsStorageAccountName": {
+      "type": "string",
+      "value": "[variables('docsStorageAccountName')]"
     },
     "functionName": {
       "type": "string",
       "value": "[variables('appName')]"
+    },
+    "sqlDatabaseName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Sql/servers/databases', split(format('{0}/{1}', variables('serverName'), parameters('dbName')), '/')[0], split(format('{0}/{1}', variables('serverName'), parameters('dbName')), '/')[1])).databaseId]"
+    },
+    "sqlServerName": {
+      "type": "string",
+      "value": "[variables('serverName')]"
     }
   },
   "metadata": {
     "_generator": {
       "name": "bicep",
       "version": "0.3.1.62928",
-      "templateHash": "9669640328014208097"
+      "templateHash": "7590167256531906547"
     }
   }
 }

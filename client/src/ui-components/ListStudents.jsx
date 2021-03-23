@@ -14,6 +14,9 @@ import { StudentsDataGrid } from "./StudentsDataGrid";
 // Material-ui imports
 import Paper from "@material-ui/core/Paper";
 import { callQueryAzureDbApi } from "../utils/AzureApiCall";
+import { Typography } from "@material-ui/core";
+import Divider from '@material-ui/core/Divider';
+import Grid from '@material-ui/core/Grid';
 
 const StudentListContent = () => {
 	const { inProgress } = useMsal();
@@ -27,6 +30,7 @@ const StudentListContent = () => {
 	}, [inProgress]);
 
 	return (
+
 		<Paper>
 			{ dbData ? <StudentsDataGrid dbData={dbData} /> : null}
 		</Paper>
@@ -45,7 +49,15 @@ export function ListStudents() {
 			errorComponent={ErrorComponent}
 			loadingComponent={Loading}
 		>
-			<StudentListContent />
+			<Grid container xs={12} >
+				<Grid item xs={12}>
+					<Typography variant="h5">Students</Typography>
+					<Divider></Divider>
+				</Grid>
+				<Grid item xs={12}>
+					<StudentListContent />
+				</Grid>
+			</Grid>
 		</MsalAuthenticationTemplate>
 	)
 };
