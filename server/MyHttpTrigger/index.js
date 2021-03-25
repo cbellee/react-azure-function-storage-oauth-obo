@@ -103,6 +103,7 @@ app.get('/api/blob/list', passport.authenticate('oauth-bearer', { session: false
 
 		// get list of blobs in container
 		await listBlobs(tokenObj['access_token'], auth.storageAccountName, container)
+			.then(handleErrors)
 			.then(str => new DOMParser().parseFromString(str, "text/xml"))
 			.then(xml => {
 				let blobList = Array.from(xml.getElementsByTagName('Blob'));
@@ -120,7 +121,8 @@ app.get('/api/blob/list', passport.authenticate('oauth-bearer', { session: false
 				console.log(JSON.stringify(arr));
 				res.setHeader('Content-Type', 'application/json');
 				res.end(JSON.stringify(arr));
-			});
+			})
+			.catch(error => console.log(error));
 	}
 )
 
@@ -148,6 +150,8 @@ app.get('/api/db', passport.authenticate('oauth-bearer', { session: false }),
 	async (req, res) => {
 		const userToken = req.get('authorization');
 		let tokenObj = await getAccessToken(userToken, auth.azureSqlDbResourceScope);
+		console.log('auth.azureSqlDbResourceScope', auth.azureSqlDbResourceScope)
+		console.log('user_token', userToken);
 		console.log('access_token', tokenObj["access_token"]);
 
 		// create database configuration object
@@ -420,6 +424,7 @@ async function getAccessToken(userToken, scope) {
 
 	const [bearer, tokenValue] = userToken.split(' ');
 	const tokenEndpoint = `https://${auth.authority}/${auth.tenantName}/oauth2/${auth.version}/token`;
+	console.log('tokenEndpoint', tokenEndpoint)
 
 	let myHeaders = new fetch.Headers();
 	myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');

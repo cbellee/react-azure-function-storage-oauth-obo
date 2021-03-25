@@ -1,26 +1,42 @@
 param sqlAdminUserName string
 param sqlAdminPassword string
 param dbName string = 'studentdb'
+param containers array = [
+  '1000'
+  '1001'
+  '1002'
+  '1003'
+]
 param tags object = {
   costcenter: 1234567890
 }
 
 var prefix = uniqueString(resourceGroup().id)
-var serverName = concat(prefix, '-sqlserver')
+var sqlServerName = concat(prefix, '-sqlserver')
 var webStorageAccountName = concat('webstor', prefix)
-var docsStorageAccountName = concat('docstor', prefix)
+var docsStorageAccountName = concat('docsstor', prefix)
+var funcStorageAccountName = concat('funcstor', prefix)
 var appInsightsName = uniqueString(concat(prefix, '-insights'))
+var appServicePlanName = concat(prefix, '-asp')
 var appName = concat(prefix, '-func')
 var webStorageContainerName = '$web'
 
 resource sqlServer 'Microsoft.Sql/servers@2020-08-01-preview' = {
-  name: serverName
+  name: sqlServerName
   tags: tags
   location: resourceGroup().location
   properties: {
     administratorLogin: sqlAdminUserName
     administratorLoginPassword: sqlAdminPassword
     version: '12.0'
+  }
+}
+
+resource sqlServerFirewallRule 'Microsoft.Sql/servers/firewallRules@2020-08-01-preview' = {
+  name: '${sqlServer.name}/allAzureServicesFirewallRule'
+  properties: {
+    endIpAddress: '0.0.0.0'
+    startIpAddress: '0.0.0.0'
   }
 }
 
@@ -47,6 +63,7 @@ resource webStorage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
     tier: 'Standard'
   }
   properties: {
+    minimumTlsVersion: 'TLS1_2'
     networkAcls: {
       bypass: 'AzureServices'
       virtualNetworkRules: []
@@ -65,6 +82,16 @@ resource webStorage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
       }
       keySource: 'Microsoft.Storage'
     }
+  }
+}
+
+resource funcStorage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
+  location: resourceGroup().location
+  kind: 'Storage'
+  name: funcStorageAccountName
+  sku: {
+    name: 'Standard_LRS'
+    tier: 'Standard'
   }
 }
 
@@ -77,6 +104,7 @@ resource docsStorage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
     tier: 'Standard'
   }
   properties: {
+    minimumTlsVersion: 'TLS1_2'
     networkAcls: {
       bypass: 'AzureServices'
       virtualNetworkRules: []
@@ -98,6 +126,10 @@ resource docsStorage 'Microsoft.Storage/storageAccounts@2020-08-01-preview' = {
   }
 }
 
+resource blobContainers 'Microsoft.Storage/storageAccounts/blobServices/containers@2019-06-01' = [for container in containers: {
+  name: '${docsStorage.name}/default/${container}'
+}]
+
 resource webStorageContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2020-08-01-preview' = {
   name: concat(webStorageAccountName, '/default/', webStorageContainerName)
   properties: {
@@ -106,6 +138,19 @@ resource webStorageContainer 'Microsoft.Storage/storageAccounts/blobServices/con
   dependsOn: [
     webStorage
   ]
+}
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2020-10-01' = {
+  name: appServicePlanName
+  location: resourceGroup().location
+  kind: 'linux'
+  sku: {
+    name: 'B1'
+    capacity: 1
+  }
+  properties: {
+    reserved: true
+  }
 }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02-preview' = {
@@ -123,12 +168,20 @@ resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
   name: appName
   kind: 'functionapp,linux'
   properties: {
+    serverFarmId: appServicePlan.id
     reserved: true
     siteConfig: {
+      cors: {
+        supportCredentials: true
+        allowedOrigins: [
+          substring(webStorage.properties.primaryEndpoints.web, 0, length(webStorage.properties.primaryEndpoints.web) - 1)
+        ]
+      }
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
-          value: concat('DefaultEndpointsProtocol=https;AccountName=', webStorageAccountName, ';AccountKey=', listKeys(webStorageAccountName, '2019-06-01').keys[0].value)
+          value: 'DefaultEndpointsProtocol=https;AccountName=${funcStorage.name};AccountKey=${listKeys(funcStorage.id, funcStorage.apiVersion).keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+          // value: 'DefaultEndpointsProtocol=https;AccountName=${funcStorage.name};AccountKey=${listKeys(funcStorage.id, funcStorage.apiVersion)};EndpointSuffix=core.windows.net'
         }
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
@@ -157,6 +210,8 @@ resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
 
 output webStorageAccountName string = webStorageAccountName
 output docsStorageAccountName string = docsStorageAccountName
+output funcStorageAccountName string = funcStorageAccountName
 output functionName string = functionApp.name
 output sqlDatabaseName string = sqlDb.properties.databaseId
-output sqlServerName string = sqlServer.name
+output sqlServerFqdn string = sqlServer.properties.fullyQualifiedDomainName
+output sqlServerName string = sqlServerName
