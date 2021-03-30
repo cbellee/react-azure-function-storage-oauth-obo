@@ -15,7 +15,7 @@ const columns = [
 			<DownloadIcon
 				color="primary"
 				target="_blank"
-				onClick={() => { callGetBloblApi(`${apiConfig.blobEndpoint}/blob`, params.getValue('name')) }}
+				onClick={() => { callGetBlobApi(`${apiConfig.endpoint}/blob?container=${params.getValue('container')}&blob=${params.getValue('name')}`, params.getValue('name')) }}
 			>Download</DownloadIcon>
 		)
 	},
@@ -28,12 +28,12 @@ export const StudentDocument = ({ documentData }) => {
 				<Grid container >
 					<DataGrid rows={documentData} autoHeight={true} columns={columns} pageSize={5} />
 				</Grid>
-				<Grid 
+				<Grid
 					container
 					direction="column"
 					alignItems="flex-end"
 					justify="flex-start" >
-					<Button  variant="contained" color="primary">Upload</Button>
+					<Button variant="contained" color="primary">Upload</Button>
 				</Grid>
 			</Grid>
 		</div>

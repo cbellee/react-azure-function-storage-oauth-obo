@@ -54,8 +54,8 @@ if ($isDev) {
 }
 else {
 	$configMap['REACT_APP_API_ENDPOINT'] = "https://$($functionName).azurewebsites.net/api"
-	$configMap['REACT_APP_REDIRECT_URI'] = $storageAccount.PrimaryEnpoints.web
-	$configMap['REACT_APP_POST_LOGOUT_REDIRECT_URI'] = $storageAccount.PrimaryEnpoints.web
+	$configMap['REACT_APP_REDIRECT_URI'] = $storageAccount.PrimaryEndpoints.web
+	$configMap['REACT_APP_POST_LOGOUT_REDIRECT_URI'] = $storageAccount.PrimaryEndpoints.web
 }
 
 # clear .env file
@@ -91,5 +91,4 @@ if (!$isDev) {
 
 	# deploy back-end azure function using zip deploy method
 	az functionapp deployment source config-zip -g "$($resourceGroupName)" -n "$($functionName)" --src ./function.zip
-	# Publish-AzWebapp -ResourceGroupName $resourceGroupName -Name $functionName -ArchivePath ./iac/function.zip -Slot 'prod' -Confirm:$false -Force
 }

@@ -225,7 +225,7 @@
           "appSettings": [
             {
               "name": "AzureWebJobsStorage",
-              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', variables('funcStorageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('funcStorageAccountName')), '2020-08-01-preview'))]"
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', variables('funcStorageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('funcStorageAccountName')), '2020-08-01-preview').keys[0].value, environment().suffixes.storage)]"
             },
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
@@ -288,7 +288,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.3.1.62928",
-      "templateHash": "2247715414305793898"
+      "templateHash": "17906958713687701681"
     }
   }
 }

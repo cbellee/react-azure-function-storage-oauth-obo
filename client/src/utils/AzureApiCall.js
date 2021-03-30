@@ -2,7 +2,7 @@ import { loginRequest } from "../authConfig";
 import { msalInstance } from "../index";
 const fs = require('fs')
 
-// list blob data
+// list blobs in container
 export async function callListBlobApi(endpoint) {
 	const account = msalInstance.getActiveAccount();
 	if (!account) {
@@ -29,8 +29,8 @@ export async function callListBlobApi(endpoint) {
 		.catch(error => console.log(error));
 }
 
-// get blob data
-export async function callGetBloblApi(endpoint, blobName) {
+// get blob
+export async function callGetBlobApi(endpoint, blobName) {
 	const account = msalInstance.getActiveAccount();
 	if (!account) {
 		throw Error("No active account! Verify a user has been signed in and setActiveAccount has been called.");

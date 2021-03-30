@@ -103,7 +103,7 @@ app.get('/api/blob/list', passport.authenticate('oauth-bearer', { session: false
 
 		// get list of blobs in container
 		await listBlobs(tokenObj['access_token'], auth.storageAccountName, container)
-			.then(handleErrors)
+			//.then(handleErrors)
 			.then(str => new DOMParser().parseFromString(str, "text/xml"))
 			.then(xml => {
 				let blobList = Array.from(xml.getElementsByTagName('Blob'));
@@ -334,20 +334,6 @@ function executeInsert(inputData, query, connection, callback) {
 	}
 }
 
-// get blob from storage account container
-/* async function getBlob(accessToken, storageAccountName, containerName, blobName) {
-	let myHeaders = new fetch.Headers();
-	myHeaders.append('Authorization', 'Bearer ' + accessToken);
-	myHeaders.append('x-ms-version', '2017-11-09');
-
-	let url = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}`
-
-	let options = {
-		method: 'GET',
-		headers: myHeaders
-	};
-} */
-
 // list blobs in storage account container
 async function listBlobs(accessToken, storageAccountName, containerName) {
 	let myHeaders = new fetch.Headers();
@@ -388,37 +374,6 @@ async function createBlob(accessToken, storageAccountName, containerName, blobNa
 	return json;
 }
 
-// query Azure SQL database
-/* function queryDatabase(connection) {
-	console.log("Reading rows from the Table...");
-	let results = [];
-
-	// Read all rows from table
-	const request = new Request(
-		`SELECT * FROM Students FOR JSON PATH`,
-		(err, rowCount) => {
-			if (err) {
-				console.error(err.message);
-			} else {
-				console.log(`${rowCount} row(s) returned`);
-			}
-		}
-	);
-
-	function handleRow(columns) {
-		columns.forEach(function (column) {
-			results.push(column.value);
-		})
-	}
-
-	function handleResult() {
-
-	}
-
-	request.on("row", handleRow);
-	connection.execSql(request);
-} */
-
 // get azure storage access token on behalf of user
 async function getAccessToken(userToken, scope) {
 
@@ -456,6 +411,7 @@ async function getAccessToken(userToken, scope) {
 // error handler function
 function handleErrors(res) {
 	if (!res.ok) {
+		console.log("error!!!: ", res.statusText);
 		throw Error(res.statusText);
 	}
 	return res;
