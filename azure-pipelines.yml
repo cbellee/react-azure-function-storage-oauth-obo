@@ -7,7 +7,7 @@ trigger:
 - main
 
 variables:
-  azureSubscription: 'azure_internal_subscription'
+  azureSubscription: 'internal_azure_subscription'
   environmentName: 'dev'
   vmImageName: 'ubuntu-latest'
   location: 'australiaeast'
