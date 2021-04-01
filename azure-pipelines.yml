@@ -7,18 +7,11 @@ trigger:
 - main
 
 variables:
-
-  # Azure Resource Manager connection created during pipeline creation
-  azureSubscription: '015aec61-a5ca-4160-ac6a-4dc74d5889ce'
-
-  # Web app name
-  webAppName: ''
-
-  # Environment name
-  environmentName: ''
-
-  # Agent VM image name
+  azureSubscription: 'azure_internal_subscription'
+  environmentName: 'dev'
   vmImageName: 'ubuntu-latest'
+  location: 'australiaeast'
+  resourceGroupName: 'student-app-2-rg'
 
 stages:
 - stage: Build
@@ -51,57 +44,68 @@ stages:
         archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
         replaceExistingArchive: true
 
-    - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
-      artifact: drop
+    - task: Bash@3
+      displayName: 'Install Bicep'
+      inputs:
+        targetType: inline
+        script: |
+          curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x ./bicep
+          ./bicep build $(System.DefaultWorkingDirectory)/iac/main.bicep
+
+    - task: CopyFiles@2
+      displayName: 'Copy ARM Template files to Staging directory'
+      inputs:
+        SourceFolder: ./iac
+        Contents: main.json
+        TargetFolder: $(Build.ArtifactStagingDirectory)/templates
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish ARM Templates'
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)/templates
+        ArtifactName: templates
+  
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish function archive'
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        ArtifactName: function
 
 - stage: Deploy
   displayName: Deploy stage
   dependsOn: Build
   condition: succeeded()
-  variables: 
-    - name: LOCATION
-      value: 'australiaeast'
-    - name: RG_NAME
-      value: 'australiaeast'
   jobs:
     - job: "BicepConfigure"
       steps:
-        - task: Bash@3
-          displayName: 'Install Bicep'
+        - task: AzureResourceManagerTemplateDeployment@3
           inputs:
-            targetType: inline
-            script: |
-              curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
-              chmod +x ./bicep
-              ./bicep build $(System.DefaultWorkingDirectory)/iac/main.bicep
- 
-        - task: AzureCLI@2
-          displayName: 'Deploy Bicep Configuration'
-          inputs:
-            azureSubscription: 'tamopstf'
-            scriptType: bash
-            scriptLocation: inlineScript
-            addSpnToEnvironment: true
-            inlineScript: |
-              #!/bin/bash
-              az group create -l $LOCATION -n $RG_NAME 
-              az deployment group create -f $(System.DefaultWorkingDirectory)/iac/main.json -g $RG_NAME
+            deploymentScope: 'Resource Group'
+            azureResourceManagerConnection: $(azureSubscription)
+            action: 'Create Or Update Resource Group'
+            resourceGroupName: $(resourceGroupName)
+            location: $(location)
+            templateLocation: 'Linked artifact'
+            csmFile: $(Pipeline.Workspace)/templates/main.json
+            deploymentMode: Incremental
+            deploymentOutputs: deploymentOutput
 
-  - deployment: Deploy
-    displayName: Deploy
-    environment: $(environmentName)
-    pool:
-      vmImage: $(vmImageName)
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: AzureWebApp@1
-            displayName: 'Azure Web App Deploy: '
-            inputs:
-              azureSubscription: $(azureSubscription)
-              appType: webAppLinux
-              appName: $(webAppName)
-              runtimeStack: 'NODE|10.10'
-              package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
-              startUpCommand: 'npm run start'
+    - deployment: Deploy
+      displayName: Deploy
+      environment: $(environmentName)
+      pool:
+        vmImage: $(vmImageName)
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - task: AzureFunctionApp@1
+              displayName: 'Deploy Azure Function'
+              inputs:
+                azureSubscription: $(azureSubscription)
+                appType: functionAppLinux
+                appName: $(deploymentOutput.functionName)
+                runtimeStack: 'NODE|12'
+                package: $(Pipeline.Workspace)/function/$(Build.BuildId).zip
+                startUpCommand: 'npm run start'
