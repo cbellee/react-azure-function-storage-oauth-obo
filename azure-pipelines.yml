@@ -157,7 +157,7 @@ stages:
             inlineScript: |
               # patch auth.json
               $authConfig = Get-Content -Path $(Pipeline.Workspace)/artifacts/function/auth.json | ConvertFrom-Json
-              $authConfig.tenantName = $(tenantName)
+              $authConfig.tenantName = "$(tenantName)"
               $authConfig.tenantID = $(tenantId)
               $authConfig.clientID = $(apiClientId)
               $authConfig.clientSecret = $(apiClientSecret)
