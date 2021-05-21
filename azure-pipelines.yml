@@ -32,7 +32,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'copy React files to staging directory'
       inputs:
-        Contents: '/client/**'
+        Contents: '$(Build.SourcesDirectory)/client/**'
         TargetFolder: $(Build.ArtifactStagingDirectory)/react
         CleanTargetFolder: true
 
@@ -43,12 +43,12 @@ stages:
         archiveType: zip
         replaceExistingArchive: true
         includeRootFolder: false
-        rootFolderOrFile: /server
+        rootFolderOrFile: $(Build.SourcesDirectory)/server
 
     - task: CopyFiles@2
       displayName: 'copy function app files to staging directory'
       inputs:
-        SourceFolder: ./server
+        SourceFolder: $(Build.SourcesDirectory)/server
         Contents: '**/*'
         TargetFolder: $(Build.ArtifactStagingDirectory)/function
 
