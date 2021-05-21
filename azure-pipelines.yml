@@ -32,8 +32,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'copy React files to staging directory'
       inputs:
-        SourceFolder: /client
-        Contents: '**/*'
+        Contents: '/client/**'
         TargetFolder: $(Build.ArtifactStagingDirectory)/react
         CleanTargetFolder: true
 
