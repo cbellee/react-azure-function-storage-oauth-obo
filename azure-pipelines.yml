@@ -2,7 +2,7 @@ trigger:
 - main
 
 variables:
-  timestamp: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 100)]
+  #timestamp: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 100)]
   azureSubscription: 'internal_azure_subscription'
   environmentName: 'dev'
   vmImageName: 'ubuntu-latest'
@@ -119,7 +119,7 @@ stages:
               -dbName $(databaseName) -sqlAdminUserName $(sqlAdminUserName) -sqlAdminPassword $(sqlAdminPassword)
             deploymentMode: Incremental
             deploymentOutputs: infraDeployment
-            deploymentName: "infraDeployment-$(timestamp)"
+            deploymentName: "infraDeployment-$(Build.BuildNumber)"
         
         - task: AzureCLI@2
           displayName: 'enable azure storage static website'
