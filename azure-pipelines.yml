@@ -8,6 +8,7 @@ variables:
   location: 'australiaeast'
   tenantName: 'kainiindustries.net'
   resourceGroupName: 'student-app-2-rg'
+  bicepFileName: 'main'
   aadAdminObjectId: '57963f10-818b-406d-a2f6-6e758d86e259'
   aadAdminDisplayName: 'aad-dbadmin'
   databaseName: 'students'
@@ -57,19 +58,19 @@ stages:
       inputs:
         targetType: inline
         script: |
-          az bicep build --file $(System.DefaultWorkingDirectory)/iac/main.bicep
+          az bicep build --file $(System.DefaultWorkingDirectory)/iac/$(bicepFileName).bicep
 
     - task: CopyFiles@2
       displayName: 'copy ARM template files to staging directory'
       inputs:
-        SourceFolder: ./iac
-        Contents: main.json
-        TargetFolder: $(Build.ArtifactStagingDirectory)/templates
+        SourceFolder: (Build.ArtifactStagingDirectory)/iac
+        Contents: '*.json'
+        TargetFolder: $(Build.ArtifactStagingDirectory)/template
     
     - task: PublishBuildArtifacts@1
-      displayName: 'publish ARM templates'
+      displayName: 'publish ARM template'
       inputs:
-        PathtoPublish: $(Build.ArtifactStagingDirectory)/templates
+        PathtoPublish: $(Build.ArtifactStagingDirectory)/template
         ArtifactName: template
   
     - task: PublishBuildArtifacts@1
@@ -104,7 +105,7 @@ stages:
             targetPath: $(Build.SourcesDirectory)/artifacts
 
         - task: DownloadPipelineArtifact@2
-          displayName: 'download react artifatcs'
+          displayName: 'download react artifacts'
           inputs:
             artifactName: react
             targetPath: $(Build.SourcesDirectory)/artifacts
@@ -118,7 +119,7 @@ stages:
             resourceGroupName: $(resourceGroupName)
             location: $(location)
             templateLocation: 'Linked artifact'
-            csmFile: $(Pipeline.Workspace)/artifacts/template/main.json
+            csmFile: $(Pipeline.Workspace)/artifacts/template/$(bicepFileName).json
             overrideParameters: |
               -dbName $(databaseName) -sqlAdminUserName $(sqlAdminUserName) -sqlAdminPassword $(sqlAdminPassword)
             deploymentMode: Incremental
