@@ -63,7 +63,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'copy ARM template files to staging directory'
       inputs:
-        SourceFolder: (System.DefaultWorkingDirectory)/iac
+        SourceFolder: $(System.DefaultWorkingDirectory)/iac
         Contents: $(bicepFileName).json
         TargetFolder: $(Build.ArtifactStagingDirectory)/template
     
