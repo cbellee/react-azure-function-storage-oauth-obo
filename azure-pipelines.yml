@@ -90,19 +90,19 @@ stages:
           displayName: 'download arm template artifacts'
           inputs:
             artifactName: template
-            targetPath: $(Pipeline.Workspace)/artifacts
+            targetPath: $(Pipeline.Workspace)/artifacts/template
 
         - task: DownloadPipelineArtifact@2
           displayName: 'download function artifacts'
           inputs:
             artifactName: function
-            targetPath: $(Pipeline.Workspace)/artifacts
+            targetPath: $(Pipeline.Workspace)/artifacts/function
 
         - task: DownloadPipelineArtifact@2
           displayName: 'download react artifacts'
           inputs:
             artifactName: react
-            targetPath: $(Pipeline.Workspace)/artifacts
+            targetPath: $(Pipeline.Workspace)/artifacts/react
         
         - task: AzureResourceManagerTemplateDeployment@3
           displayName: 'deploy infrastructure'
