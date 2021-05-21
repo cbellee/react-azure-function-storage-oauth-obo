@@ -57,7 +57,7 @@ stages:
       inputs:
         targetType: inline
         script: |
-          az bicep build $(System.DefaultWorkingDirectory)/iac/main.bicep
+          az bicep build --file $(System.DefaultWorkingDirectory)/iac/main.bicep
 
     - task: CopyFiles@2
       displayName: 'copy ARM template files to staging directory'
