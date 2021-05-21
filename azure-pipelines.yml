@@ -131,9 +131,8 @@ stages:
               # enable Azure storage static web app feature 
               az storage blob service-properties update `
               --account-name $(infraDeployment.webStorageAccountName.value) `
-              --static-website `
-              --index-document index.html `
-              --error-document error.html
+              --static-website true `
+              --index-document index.html
 
         - task: AzureCLI@2
           displayName: 'enable Azure sql server AAD admin'
