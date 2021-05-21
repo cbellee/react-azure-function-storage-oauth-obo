@@ -167,8 +167,8 @@ stages:
 
               # patch db.json
               $dbConfig = Get-Content -Path $(Pipeline.Workspace)/artifacts/function/db.json | ConvertFrom-Json
-              $dbConfig.serverName="$(infraDeployment.sqlServerName.value)"
-              $dbConfig.dbName = "$(infraDeployment.sqlDatabaseName.value)"
+              $dbConfig.serverName = $(infraDeployment.sqlServerName.value)
+              $dbConfig.dbName = $(infraDeployment.sqlDatabaseName.value)
               $dbConfig | Set-Content -Path $(Pipeline.Workspace)/artifacts/function/db.json -Force
 
         - task: AzureFunctionApp@1
