@@ -21,6 +21,8 @@
     "start": "react-scripts start",
     "test": "jest",
     "build": "react-scripts build",
+    "build:dev": "env-cmd -f ./.env.dev npm run-script build",
+    "build:prod": "env-cmd -f ./.env.prod npm run-script build",
     "build:package": "cd ../../../lib/msal-react & npm run build:all",
     "eject": "react-scripts eject",
     "install:local": "npm install ../../../lib/msal-react ../../../lib/msal-react/node_modules/react ../../../lib/msal-react/node_modules/react-dom ../../../lib/msal-browser",
