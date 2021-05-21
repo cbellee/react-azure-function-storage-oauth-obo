@@ -130,7 +130,7 @@ stages:
             inlineScript: |
               # enable Azure storage static web app feature 
               az storage blob service-properties update \
-              --account-name $(infraDeployment.Outputs.webStorageAccountName.value) \
+              --account-name $(infraDeployment.webStorageAccountName.value) \
               --static-website \
               --index-document index.html \
               --error-document error.html
@@ -144,7 +144,7 @@ stages:
             inlineScript: |
               # enable Azure SQL server AAD admin account
               az sql server ad-admin create \
-              --server $(infraDeployment.Outputs.sqlServerName.value) \
+              --server $(infraDeployment.sqlServerName.value) \
               --display-name $(aadAdminDisplayName) \
               --object-id $(aadAdminObjectId) \
               --resource-group $(resourceGroupName)
@@ -163,13 +163,13 @@ stages:
               $authConfig.clientID=$(apiClientId)
               $authConfig.clientSecret=$(apiClientSecret)
               $authConfig.audience=$(apiClientId)
-              $authConfig.storageAccountName=$(infraDeployment.Outputs.docsStorageAccountName.value)
+              $authConfig.storageAccountName=$(infraDeployment.docsStorageAccountName.value)
               $authConfig | Set-Content -Path $(Pipeline.Workspace)/artifacts/function/auth.json -Force
 
               # patch db.json
               $dbConfig = Get-Content -Path $(Pipeline.Workspace)/artifacts/function/db.json | ConvertFrom-Json
-              $dbConfig.serverName = $(infraDeployment.Outputs.sqlServerName.value)
-              $dbConfig.dbName = $(infraDeployment.Outputs.sqlDatabaseName.value)
+              $dbConfig.serverName = $(infraDeployment.sqlServerName.value)
+              $dbConfig.dbName = $(infraDeployment.sqlDatabaseName.value)
               $dbConfig | Set-Content -Path $(Pipeline.Workspace)/artifacts/function/db.json -Force
 
         - task: AzureFunctionApp@1
@@ -199,12 +199,12 @@ stages:
               cd $(Pipeline.Workspace)/artifacts/react #/src
               New-Item -Name '.env.prod' -Path . -ItemType File
 
-              $functionName = $(infraDeployment.Outputs.functionName.value)
+              $functionName = $(infraDeployment.functionName.value)
               $apiUri = https://$($functionName).azurewebsites.net/api"
               $apiClientUri = "api://$(apiClientId)"
 
-              $webStorageAccount = az storage account  show --resource-group $(resourceGroupName) --name $(infraDeployment.Outputs.webStorageAccountName.value) | ConvertFrom-Json
-              $storageKeys = az storage account keys list --resource-group $(resourceGroupName) --name $(infraDeployment.Outputs.webStorageAccountName.value) | ConvertFrom-Json
+              $webStorageAccount = az storage account  show --resource-group $(resourceGroupName) --name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
+              $storageKeys = az storage account keys list --resource-group $(resourceGroupName) --name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
               
               # patch .env.prod file
               $envVars = @(
@@ -238,4 +238,4 @@ stages:
             SourcePath: $(Pipeline.Workspace)/artifacts/react/build
             Destination: AzureBlob
             resourceGroup: $(resourceGroupName)
-            storage: $(infraDeployment.Outputs.webStorageAccountName.value)
+            storage: $(infraDeployment.webStorageAccountName.value)
