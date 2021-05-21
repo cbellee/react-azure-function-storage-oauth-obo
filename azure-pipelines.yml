@@ -33,18 +33,10 @@ stages:
     - task: CopyFiles@2
       displayName: 'copy React files to staging directory'
       inputs:
-        Contents: '$(System.DefaultWorkingDirectory)/client/**'
+        SourceFolder: $(System.DefaultWorkingDirectory)/client
+        Contents: '**/*'
         TargetFolder: $(Build.ArtifactStagingDirectory)/react
         CleanTargetFolder: true
-
-    - task: ArchiveFiles@2
-      displayName: 'create archive for function app'
-      inputs:
-        archiveFile: $(Build.ArtifactStagingDirectory)/function-$(Build.BuildId).zip
-        archiveType: zip
-        replaceExistingArchive: true
-        includeRootFolder: false
-        rootFolderOrFile: $(System.DefaultWorkingDirectory)/server
 
     - task: CopyFiles@2
       displayName: 'copy function app files to staging directory'
@@ -52,6 +44,7 @@ stages:
         SourceFolder: $(System.DefaultWorkingDirectory)/server
         Contents: '**/*'
         TargetFolder: $(Build.ArtifactStagingDirectory)/function
+        CleanTargetFolder: true
 
     - task: Bash@3
       displayName: 'compile bicep to ARM'
@@ -66,6 +59,7 @@ stages:
         SourceFolder: $(System.DefaultWorkingDirectory)/iac
         Contents: $(bicepFileName).json
         TargetFolder: $(Build.ArtifactStagingDirectory)/template
+        CleanTargetFolder: true
     
     - task: PublishBuildArtifacts@1
       displayName: 'publish ARM template'
@@ -96,19 +90,19 @@ stages:
           displayName: 'download arm template artifacts'
           inputs:
             artifactName: template
-            targetPath: $(Build.SourcesDirectory)/artifacts
+            targetPath: $(Pipeline.Workspace)/artifacts
 
         - task: DownloadPipelineArtifact@2
           displayName: 'download function artifacts'
           inputs:
             artifactName: function
-            targetPath: $(Build.SourcesDirectory)/artifacts
+            targetPath: $(Pipeline.Workspace)/artifacts
 
         - task: DownloadPipelineArtifact@2
           displayName: 'download react artifacts'
           inputs:
             artifactName: react
-            targetPath: $(Build.SourcesDirectory)/artifacts
+            targetPath: $(Pipeline.Workspace)/artifacts
         
         - task: AzureResourceManagerTemplateDeployment@3
           displayName: 'deploy infrastructure'
