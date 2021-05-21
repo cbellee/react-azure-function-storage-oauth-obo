@@ -129,10 +129,10 @@ stages:
             azureSubscription: $(azureSubscription)
             inlineScript: |
               # enable Azure storage static web app feature 
-              az storage blob service-properties update \
-              --account-name $(infraDeployment.webStorageAccountName.value) \
-              --static-website \
-              --index-document index.html \
+              az storage blob service-properties update `
+              --account-name $(infraDeployment.webStorageAccountName.value) `
+              --static-website `
+              --index-document index.html `
               --error-document error.html
 
         - task: AzureCLI@2
@@ -143,10 +143,10 @@ stages:
             azureSubscription: $(azureSubscription)
             inlineScript: |
               # enable Azure SQL server AAD admin account
-              az sql server ad-admin create \
-              --server $(infraDeployment.sqlServerName.value) \
-              --display-name $(aadAdminDisplayName) \
-              --object-id $(aadAdminObjectId) \
+              az sql server ad-admin create `
+              --server $(infraDeployment.sqlServerName.value) `
+              --display-name $(aadAdminDisplayName) `
+              --object-id $(aadAdminObjectId) `
               --resource-group $(resourceGroupName)
 
         - task: AzureCLI@2
