@@ -159,10 +159,10 @@ stages:
               $authConfig = Get-Content -Path $(Pipeline.Workspace)/artifacts/function/auth.json | ConvertFrom-Json
               $authConfig.tenantName = "$(tenantName)"
               $authConfig.tenantID = "$(tenantId)"
-              $authConfig.clientID = $(apiClientId)
-              $authConfig.clientSecret = $(apiClientSecret)
-              $authConfig.audience = $(apiClientId)
-              $authConfig.storageAccountName = $(infraDeployment.docsStorageAccountName.value)
+              $authConfig.clientID = "$(apiClientId)"
+              $authConfig.clientSecret = "$(apiClientSecret)"
+              $authConfig.audience = "$(apiClientId)"
+              $authConfig.storageAccountName = "$(infraDeployment.docsStorageAccountName.value)"
               $authConfig | Set-Content -Path "$(Pipeline.Workspace)/artifacts/function/auth.json" -Force
 
               # patch db.json
