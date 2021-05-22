@@ -190,7 +190,7 @@ stages:
             inlineScript: |
               az functionapp deployment source config-zip `
               --resource-group $(resourceGroupName) `
-              --name $(infraDeployment.functionName.value)
+              --name $(infraDeployment.functionName.value) `
               --src $(Pipeline.Workspace)/artifacts/function/function-$(Build.BuildId).zip
 
         - task: AzureFunctionApp@1
