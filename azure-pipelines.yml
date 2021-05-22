@@ -191,7 +191,8 @@ stages:
               az functionapp deployment source config-zip `
               --resource-group $(resourceGroupName) `
               --name $(infraDeployment.functionName.value) `
-              --src $(Pipeline.Workspace)/artifacts/function/function-$(Build.BuildId).zip
+              --src $(Pipeline.Workspace)/artifacts/function/function-$(Build.BuildId).zip `
+              --timeout 360
 
         - task: AzureFunctionApp@1
           displayName: 'deploy function'
