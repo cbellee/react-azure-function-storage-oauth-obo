@@ -176,7 +176,7 @@ stages:
           inputs:
             azureSubscription: $(azureSubscription)
             appType: functionAppLinux
-            appName: $(infraDeployment.functionName.value)
+            appName: $(infraDeployment.functionName)
             runtimeStack: 'NODE|12'
             package: $(Pipeline.Workspace)/artifacts/function/$(Build.BuildId).zip
             startUpCommand: 'npm run start'
