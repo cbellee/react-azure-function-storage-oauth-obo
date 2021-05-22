@@ -171,12 +171,14 @@ stages:
               $dbConfig.dbName = $(infraDeployment.sqlDatabaseName.value)
               $dbConfig | Set-Content -Path $(Pipeline.Workspace)/artifacts/function/db.json -Force
 
+              Write-Host "infraDeployment: $(infraDeployment)"
+
         - task: AzureFunctionApp@1
           displayName: 'deploy function'
           inputs:
             azureSubscription: $(azureSubscription)
             appType: functionAppLinux
-            appName: $(infraDeployment.functionName)
+            appName: $(infraDeployment.functionName.value)
             runtimeStack: 'NODE|12'
             package: $(Pipeline.Workspace)/artifacts/function/$(Build.BuildId).zip
             startUpCommand: 'npm run start'
