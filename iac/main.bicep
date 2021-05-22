@@ -211,6 +211,7 @@ resource functionApp 'Microsoft.Web/sites@2020-06-01' = {
 output webStorageAccountName string = webStorageAccountName
 output docsStorageAccountName string = docsStorageAccountName
 output funcStorageAccountName string = funcStorageAccountName
+output webStorageEndpoint string = webStorage.properties.primaryEndpoints.web
 output functionName string = functionApp.name
 output sqlDatabaseName string = sqlDb.properties.databaseId
 output sqlServerFqdn string = sqlServer.properties.fullyQualifiedDomainName

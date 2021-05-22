@@ -238,8 +238,8 @@ stages:
                 "REACT_APP_API_ENDPOINT=$apiUri",
                 "REACT_APP_REDIRECT_URI=$apiUri",
                 "REACT_APP_POST_LOGOUT_REDIRECT_URI=$apiUri",
-                "REACT_APP_REDIRECT_URI=$($webStorageAccount.primaryEndpoints.web)",
-                "REACT_APP_POST_LOGOUT_REDIRECT_URI=$($webStorageAccount.primaryEndpoints.web)"
+                "REACT_APP_REDIRECT_URI=$(infraDeployment.webStorageEndpoint.value)",
+                "REACT_APP_POST_LOGOUT_REDIRECT_URI=$(infraDeployment.webStorageEndpoint.value)"
               )
 
               # add env vars to ./.env.prod file
