@@ -172,9 +172,30 @@ stages:
               $dbConfig | Set-Content -Path $(Pipeline.Workspace)/artifacts/function/db.json -Force
 
               Write-Host "infraDeployment: $(infraDeployment)"
+        
+        - task: ArchiveFiles@2
+          displayName: 'create function app zip archive'
+          inputs:
+            archiveType: zip
+            rootFolderOrFile: $(Pipeline.Workspace)/artifacts/function
+            archiveFile: $(Pipeline.Workspace)/artifacts/function/function-$(Build.BuildId).zip
+            includeRootFolder: false
+
+        - task: AzureCLI@2
+          displayName: 'deploy azure function'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptLocation: inlineScript
+            scriptType: pscore
+            inlineScript: |
+              az functionapp deployment source config-zip `
+              --resource-group $(resourceGroupName) `
+              --name $(infraDeployment.functionName.value)
+              --src $(Pipeline.Workspace)/artifacts/function/function-$(Build.BuildId).zip
 
         - task: AzureFunctionApp@1
           displayName: 'deploy function'
+          enabled: false
           inputs:
             azureSubscription: $(azureSubscription)
             appType: functionAppLinux
