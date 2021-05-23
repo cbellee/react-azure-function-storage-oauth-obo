@@ -236,7 +236,7 @@ stages:
                 "BLOB_READ_SCOPE=$($apiClientUri)/storage.blob.read",
                 "SQL_READ_WRITE_SCOPE=$($apiClientUri)/sql.db.readwrite",
                 "REACT_APP_API_ENDPOINT=$($apiUri)",
-                "REACT_APP_REDIRECT_URI=${$apiUri)",
+                "REACT_APP_REDIRECT_URI=$($apiUri)",
                 "REACT_APP_POST_LOGOUT_REDIRECT_URI=$($apiUri)",
                 "REACT_APP_REDIRECT_URI=$(infraDeployment.webStorageEndpoint.value)",
                 "REACT_APP_POST_LOGOUT_REDIRECT_URI=$(infraDeployment.webStorageEndpoint.value)"
