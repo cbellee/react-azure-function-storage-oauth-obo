@@ -223,7 +223,7 @@ stages:
               New-Item -Name '.env.prod' -Path . -ItemType File
 
               $functionName = $(infraDeployment.functionName.value)
-              $apiUri = https://$($functionName).azurewebsites.net/api"
+              $apiUri = "https://$($functionName).azurewebsites.net/api"
               $apiClientUri = "api://$(apiClientId)"
 
               $webStorageAccount = az storage account  show --resource-group $(resourceGroupName) --name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
@@ -238,8 +238,8 @@ stages:
                 "REACT_APP_API_ENDPOINT=$apiUri",
                 "REACT_APP_REDIRECT_URI=$apiUri",
                 "REACT_APP_POST_LOGOUT_REDIRECT_URI=$apiUri",
-                REACT_APP_REDIRECT_URI=$(infraDeployment.webStorageEndpoint.value),
-                REACT_APP_POST_LOGOUT_REDIRECT_URI=$(infraDeployment.webStorageEndpoint.value)
+                "REACT_APP_REDIRECT_URI=$(infraDeployment.webStorageEndpoint.value)",
+                "REACT_APP_POST_LOGOUT_REDIRECT_URI=$(infraDeployment.webStorageEndpoint.value)"
               )
 
               # add env vars to ./.env.prod file
