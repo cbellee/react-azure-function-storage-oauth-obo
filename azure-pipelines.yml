@@ -256,7 +256,7 @@ stages:
               npm install env-cmd
               npm install
               npm run build:prod
-              npm run test --if-present
+              # npm run test --if-present
 
         - task: AzureFileCopy@4
           displayName: 'copy react files to static web storage account'
