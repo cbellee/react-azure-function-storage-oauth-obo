@@ -1,6 +1,6 @@
 import { DataGrid } from '@material-ui/data-grid';
 import { apiConfig } from "../apiConfig";
-import { callGetBloblApi } from "../utils/AzureApiCall";
+import { callGetBlobApi } from "../utils/AzureApiCall";
 import DownloadIcon from '@material-ui/icons/CloudDownload';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
