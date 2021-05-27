@@ -217,11 +217,7 @@ stages:
             azureSubscription: $(azureSubscription)
             scriptType: pscore
             scriptLocation: inlineScript
-            inlineScript: |
-              # create .env.prod file
-              cd $(Pipeline.Workspace)/artifacts/react #/src
-              New-Item -Name '.env.prod' -Path . -ItemType File -Force
-              
+            inlineScript: |              
               function Replace-Tokens
               {
                 param(
@@ -235,12 +231,16 @@ stages:
                 Write-Host "Processed: " + $inputFile
               }
 
+              # create .env.prod file
+              cd $(Pipeline.Workspace)/artifacts/react #/src
+              New-Item -Name '.env.prod' -Path . -ItemType File -Force
+
               $functionName = $(infraDeployment.functionName.value)
               $apiUri = "https://$functionName.azurewebsites.net/api"
               $apiClientUri = "api://$(apiClientId)"
 
-              $webStorageAccount = az storage account  show --resource-group $(resourceGroupName) --name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
-              $storageKeys = az storage account keys list --resource-group $(resourceGroupName) --name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
+              $webStorageAccount = az storage account  show --resource-group $(resourceGroupName) --account-name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
+              $storageKeys = az storage account keys list --resource-group $(resourceGroupName) --account-name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
               
               # patch .env.prod file
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_CLIENT_ID}' -TokenValue $(reactClientId)
@@ -248,8 +248,8 @@ stages:
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{BLOB_READ_SCOPE}' -TokenValue "$($apiClientUri)/storage.blob.read"
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{SQL_READ_WRITE_SCOPE}' -TokenValue "$($apiClientUri)/sql.db.readwrite"
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_API_ENDPOINT}' -TokenValue $apiUri
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_REDIRECT_URI}' -TokenValue $apiUri
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_POST_LOGOUT_REDIRECT_URI}' -TokenValue $apiUri
+              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageAccountName.value)
+              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_POST_LOGOUT_REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageAccountName.value)
             
               # build react app
               npm install env-cmd
