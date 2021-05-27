@@ -239,7 +239,7 @@ stages:
               $apiUri = "https://$functionName.azurewebsites.net/api"
               $apiClientUri = "api://$(apiClientId)"
 
-              $webStorageAccount = az storage account  show --resource-group $(resourceGroupName) --account-name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
+              $webStorageAccount = az storage account  show --resource-group $(resourceGroupName) --name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
               $storageKeys = az storage account keys list --resource-group $(resourceGroupName) --account-name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
               
               # patch .env.prod file
