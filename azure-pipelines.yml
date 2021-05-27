@@ -251,6 +251,8 @@ stages:
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageAccountName.value)
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_POST_LOGOUT_REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageAccountName.value)
             
+              Get-Content -Path ./env.prod
+
               # build react app
               npm install typescript
               npm install env-cmd
@@ -259,10 +261,11 @@ stages:
               # npm run test --if-present
 
         - task: AzureCLI@2
-          displayName: Az File Copy to Storage
+          displayName: 'copy React files to Azure storage'
           inputs:
             azureSubscription: $(azureSubscription)
             scriptLocation: inlineScript
+            scriptType: pscore
             inlineScript: |
               az storage blob upload-batch `
               --destination '$web' `
