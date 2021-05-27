@@ -9,7 +9,7 @@ $dbName = 'studentdb'
 [bool]$isDev = $false
 
 # transpile bicep DSL to JSON arm template
-bicep build ./main.bicep --outfile ./main.json
+az bicep build ./main.bicep --outfile ./main.json
 
 # create resource group
 New-AzResourceGroup -Name $resourceGroupName -Location $location -Force
