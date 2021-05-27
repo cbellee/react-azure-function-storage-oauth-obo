@@ -252,6 +252,7 @@ stages:
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_POST_LOGOUT_REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageAccountName.value)
             
               # build react app
+              npm install typescript
               npm install env-cmd
               npm install
               npm run build:prod
