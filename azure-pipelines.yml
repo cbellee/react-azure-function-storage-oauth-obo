@@ -258,12 +258,13 @@ stages:
               npm run build:prod
               # npm run test --if-present
 
-        - task: AzureFileCopy@4
-          displayName: 'copy react files to static web storage account'
+        - task: AzureCLI@1
+          displayName: Az File Copy to Storage
           inputs:
             azureSubscription: $(azureSubscription)
-            ContainerName: '$web'
-            SourcePath: $(Pipeline.Workspace)/artifacts/react/build
-            Destination: AzureBlob
-            resourceGroup: $(resourceGroupName)
-            storage: $(infraDeployment.webStorageAccountName.value)
+            scriptLocation: inlineScript
+            inlineScript: |
+              az storage blob upload-batch `
+              --destination '$web' `
+              --account-name $(infraDeployment.webStorageAccountName.value) `
+              --source $(Pipeline.Workspace)/artifacts/react/build
