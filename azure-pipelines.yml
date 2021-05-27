@@ -251,7 +251,7 @@ stages:
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageAccountName.value)
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_POST_LOGOUT_REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageAccountName.value)
             
-              Get-Content -Path ./env.prod
+              Get-Content -Path ./.env.prod
 
               # build react app
               npm install typescript
