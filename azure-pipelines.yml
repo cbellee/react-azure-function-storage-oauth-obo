@@ -220,7 +220,7 @@ stages:
             inlineScript: |
               # create .env.prod file
               cd $(Pipeline.Workspace)/artifacts/react #/src
-              New-Item -Name '.env.prod' -Path . -ItemType File
+              New-Item -Name '.env.prod' -Path . -ItemType File -Force
               
               function Replace-Tokens
               {
