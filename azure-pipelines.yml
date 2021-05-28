@@ -280,3 +280,12 @@ stages:
               --destination '$web' `
               --account-name $(infraDeployment.webStorageAccountName.value) `
               --source $(Pipeline.Workspace)/artifacts/react/build
+
+        - task: AzureCLI@2
+          displayName: 'update redirect uri in app registration'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptLocation: inlineScript
+            scriptType: pscore
+            inlineScript: |
+              az ad app update --id $(reactClientId) --reply-urls $(infraDeployment.webStorageEndpoint.value) http://localhost:3000
