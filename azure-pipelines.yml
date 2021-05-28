@@ -161,7 +161,7 @@ stages:
               $authConfig.tenantID = "$(tenantId)"
               $authConfig.clientID = "$(apiClientId)"
               $authConfig.clientSecret = "$(apiClientSecret)"
-              $authConfig.audience = "$(apiClientId)"
+              $authConfig.audience = "$(reactClientId)"
               $authConfig.storageAccountName = $(infraDeployment.docsStorageAccountName.value)
               $authConfig | Set-Content -Path $(Pipeline.Workspace)/artifacts/function/auth.json -Force
 
