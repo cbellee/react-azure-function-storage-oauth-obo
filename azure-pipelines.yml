@@ -223,13 +223,18 @@ stages:
                 param(
                   [string]$inputFile,
                   [string]$outputFile,
-                  [string]$token,
-                  [string]$tokenValue
+                  [hashtable]$tokenHash
                 )
-
-                (Get-Content $inputFile) | foreach-object { $_ -replace $token, $tokenValue } | Set-Content $outputFile
-                Write-Host "replaced `'$token`' with `'$tokenValue`'"
-                Write-Host "Processed: " + $inputFile
+              
+                $file = Get-Content $inputFile
+                foreach ($line in $file) {
+                  foreach ($t in $tokenHash.GetEnumerator()) {
+                    if ($line -match $t.Name) {
+                      $line -replace $t.Name, $t.Value | Add-Content -Path $outputFile
+                      Write-Host "replaced `'$($t.Name)`' with `'$($t.Value)`'"
+                    }
+                  }
+                }
               }
 
               # create .env.prod file
@@ -244,14 +249,17 @@ stages:
               $storageKeys = az storage account keys list --resource-group $(resourceGroupName) --account-name $(infraDeployment.webStorageAccountName.value) | ConvertFrom-Json
               
               # patch .env.prod file
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_CLIENT_ID}' -TokenValue $(reactClientId)
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{AAD_AUTHORITY}' -TokenValue $(authority)
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{BLOB_READ_SCOPE}' -TokenValue "$($apiClientUri)/storage.blob.read"
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{SQL_READ_WRITE_SCOPE}' -TokenValue "$($apiClientUri)/sql.db.readwrite"
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{BACKEND_API_ENDPOINT}' -TokenValue $apiUri
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageEndpoint.value)
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{POST_LOGOUT_REDIRECT_URI}' -TokenValue $(infraDeployment.webStorageEndpoint.value)
-            
+              $tokenHash = @{
+                '{REACT_CLIENT_ID}'=$(reactClientId)
+                '{AAD_AUTHORITY}'=$(authority)
+                '{BLOB_READ_SCOPE}'="$($apiClientUri)/storage.blob.read"
+                '{SQL_READ_WRITE_SCOPE}'=$($apiClientUri)/sql.db.readwrite"
+                '{BACKEND_API_ENDPOINT}'=$apiUri
+                '{REDIRECT_URI}'=$(infraDeployment.webStorageEndpoint.value)
+                '{POST_LOGOUT_REDIRECT_URI}'=$(infraDeployment.webStorageEndpoint.value)
+              }
+
+              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -TokenHash $tokenHash
               Get-Content -Path ./.env.prod
 
               # build react app
