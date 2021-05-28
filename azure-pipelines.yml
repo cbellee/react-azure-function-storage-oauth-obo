@@ -234,7 +234,7 @@ stages:
 
               # create .env.prod file
               cd $(Pipeline.Workspace)/artifacts/react #/src
-              New-Item -Name '.env.prod' -Path . -ItemType File -Force
+              New-Item -Name './.env.prod' -Path . -ItemType File -Force
 
               $functionName = $(infraDeployment.functionName.value)
               $apiUri = "https://$functionName.azurewebsites.net/api"
