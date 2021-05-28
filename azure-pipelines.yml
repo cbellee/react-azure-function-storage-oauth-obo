@@ -255,8 +255,8 @@ stages:
                 '{BLOB_READ_SCOPE}'="$($apiClientUri)/storage.blob.read"
                 '{SQL_READ_WRITE_SCOPE}'="$($apiClientUri)/sql.db.readwrite"
                 '{BACKEND_API_ENDPOINT}'="$apiUri"
-                '{REDIRECT_URI}'="$(infraDeployment.webStorageEndpoint.value)"
-                '{POST_LOGOUT_REDIRECT_URI}'="$(infraDeployment.webStorageEndpoint.value)"
+                '{REDIRECT_URI}'=$(infraDeployment.webStorageEndpoint.value)
+                '{POST_LOGOUT_REDIRECT_URI}'=$(infraDeployment.webStorageEndpoint.value)
               }
 
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -TokenHash $tokenHash
