@@ -165,11 +165,15 @@ stages:
               $authConfig.storageAccountName = $(infraDeployment.docsStorageAccountName.value)
               $authConfig | Set-Content -Path $(Pipeline.Workspace)/artifacts/function/auth.json -Force
 
+              Get-Content $(Pipeline.Workspace)/artifacts/function/auth.json
+
               # patch db.json
               $dbConfig = Get-Content -Path $(Pipeline.Workspace)/artifacts/function/db.json | ConvertFrom-Json
               $dbConfig.serverName = $(infraDeployment.sqlServerName.value)
               $dbConfig.dbName = $(infraDeployment.sqlDatabaseName.value)
               $dbConfig | Set-Content -Path $(Pipeline.Workspace)/artifacts/function/db.json -Force
+
+              Get-Content $(Pipeline.Workspace)/artifacts/function/db.json
 
               Write-Host "infraDeployment: $(infraDeployment)"
         
