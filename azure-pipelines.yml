@@ -245,7 +245,7 @@ stages:
               
               # patch .env.prod file
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_CLIENT_ID}' -TokenValue $(reactClientId)
-              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_AUTHORITY}' -TokenValue $(aadAuthority)
+              Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_AUTHORITY}' -TokenValue $aadAuthority
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{BLOB_READ_SCOPE}' -TokenValue "$($apiClientUri)/storage.blob.read"
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{SQL_READ_WRITE_SCOPE}' -TokenValue "$($apiClientUri)/sql.db.readwrite"
               Replace-Tokens -InputFile ./.env -OutputFile ./.env.prod -Token '{REACT_APP_API_ENDPOINT}' -TokenValue $apiUri
